@@ -14,6 +14,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElectronicsComponentWarehouse.Application", "src\Application\ElectronicsComponentWarehouse.Application\ElectronicsComponentWarehouse.Application.csproj", "{45B301A6-7718-4445-88EC-2955DBB1DA3D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastructure", "Infrastructure", "{9048EB7F-3875-A59E-E36B-5BD4C6F2A282}"
+	ProjectSection(SolutionItems) = preProject
+		DependencyInjection.cs = DependencyInjection.cs
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Data", "Data", "{DADA25D2-91ED-DD17-EEC4-10F9A22E2B61}"
 EndProject
@@ -30,6 +33,13 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Desktop.Client", "Desktop.Client", "{5A7052C9-532C-C70F-B039-2055691BB29C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElectronicsComponentWarehouse.Desktop.Client", "src\Desktop.Client\ElectronicsComponentWarehouse.Desktop.Client\ElectronicsComponentWarehouse.Desktop.Client.csproj", "{B06A3DA5-3B8B-4F35-BDBE-145318554DEC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Элементы решения", "Элементы решения", "{93D312EE-ADE7-497F-A672-528A3040EB72}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		Directory.Build.props = Directory.Build.props
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
