@@ -1,23 +1,21 @@
-//Создаем DbContext
 using ElectronicsComponentWarehouse.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
-namespace ElectronicsComponentWarehouse.Infrastructure.Data.Data
+namespace ElectronicsComponentWarehouse.Infrastructure.Data.ElectronicsComponentWarehouse.Infrastructure.Data.Data
 {
     /// <summary>
     /// Контекст базы данных приложения
     /// </summary>
     public class ApplicationDbContext : DbContext
     {
-        private readonly ILogger<ApplicationDbContext> _logger;
-
-        public ApplicationDbContext(
-            DbContextOptions<ApplicationDbContext> options,
-            ILogger<ApplicationDbContext> logger)
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
-            _logger = logger;
+        }
+
+        // Конструктор без параметров для миграций EF Core
+        protected ApplicationDbContext()
+        {
         }
 
         // DbSet для каждой сущности
@@ -31,26 +29,24 @@ namespace ElectronicsComponentWarehouse.Infrastructure.Data.Data
 
             // Применяем все конфигурации из текущей сборки
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+        }
 
-            _logger.LogInformation("Database model configured successfully");
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            if (!optionsBuilder.IsConfigured)
+            {
+                // Этот код выполняется только при создании миграций
+                // В продакшене строка подключения берется из конфигурации
+                optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=ElectronicsComponentWarehouseDB_Dev;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=true;Encrypt=false");
+            }
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             // Автоматическое обновление временных меток
             UpdateTimestamps();
-            
-            try
-            {
-                var result = await base.SaveChangesAsync(cancellationToken);
-                _logger.LogDebug("Saved {Count} changes to database", result);
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving changes to database");
-                throw;
-            }
+
+            return await base.SaveChangesAsync(cancellationToken);
         }
 
         /// <summary>
@@ -59,7 +55,7 @@ namespace ElectronicsComponentWarehouse.Infrastructure.Data.Data
         private void UpdateTimestamps()
         {
             var entries = ChangeTracker.Entries()
-                .Where(e => e.Entity is BaseEntity && 
+                .Where(e => e.Entity is BaseEntity &&
                     (e.State == EntityState.Added || e.State == EntityState.Modified));
 
             var utcNow = DateTime.UtcNow;
@@ -83,23 +79,6 @@ namespace ElectronicsComponentWarehouse.Infrastructure.Data.Data
                 {
                     category.UpdatedAt = utcNow;
                 }
-                // Для User не обновляем временные метки при каждом изменении
-            }
-        }
-
-        /// <summary>
-        /// Проверка подключения к базе данных
-        /// </summary>
-        public async Task<bool> CanConnectAsync(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                return await Database.CanConnectAsync(cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Database connection test failed");
-                return false;
             }
         }
     }

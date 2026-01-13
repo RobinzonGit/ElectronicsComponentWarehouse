@@ -1,13 +1,10 @@
-﻿//Создаем класс для регистрации сервисов в DI-контейнере
-using ElectronicsComponentWarehouse.Domain.Interfaces.Repositories;
-using ElectronicsComponentWarehouse.Infrastructure.Data.Data;
+﻿using ElectronicsComponentWarehouse.Domain.Interfaces.Repositories;
+using ElectronicsComponentWarehouse.Infrastructure.Data.ElectronicsComponentWarehouse.Infrastructure.Data.Data;
 using ElectronicsComponentWarehouse.Infrastructure.Data.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Threading.Tasks;
 
 namespace ElectronicsComponentWarehouse.Infrastructure.Data
 {
@@ -51,22 +48,12 @@ namespace ElectronicsComponentWarehouse.Infrastructure.Data
                     options.EnableSensitiveDataLogging();
                     options.EnableDetailedErrors();
                 }
-
-                options.LogTo(Console.WriteLine, LogLevel.Information);
             });
 
             // Регистрируем репозитории
-            services.AddScoped(typeof(IRepository<>), typeof(BaseRepository<>));
             services.AddScoped<ICategoryRepository, CategoryRepository>();
             services.AddScoped<IComponentRepository, ComponentRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
-
-            // Регистрируем фабрику DbContext для использования в фоновых задачах
-            services.AddDbContextFactory<ApplicationDbContext>(options =>
-            {
-                var connectionString = configuration.GetConnectionString("DefaultConnection");
-                options.UseSqlServer(connectionString);
-            });
 
             return services;
         }
@@ -82,31 +69,11 @@ namespace ElectronicsComponentWarehouse.Infrastructure.Data
             try
             {
                 var context = services.GetRequiredService<ApplicationDbContext>();
-                var logger = services.GetRequiredService<ILogger<ApplicationDbContext>>();
-
-                logger.LogInformation("Checking for pending migrations...");
 
                 var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
                 if (pendingMigrations.Any())
                 {
-                    logger.LogInformation("Applying {Count} pending migrations...", pendingMigrations.Count());
                     await context.Database.MigrateAsync();
-                    logger.LogInformation("Migrations applied successfully");
-                }
-                else
-                {
-                    logger.LogInformation("Database is up to date");
-                }
-
-                // Проверяем подключение к базе данных
-                var canConnect = await context.CanConnectAsync();
-                if (canConnect)
-                {
-                    logger.LogInformation("Database connection test: SUCCESS");
-                }
-                else
-                {
-                    logger.LogWarning("Database connection test: FAILED");
                 }
             }
             catch (Exception ex)

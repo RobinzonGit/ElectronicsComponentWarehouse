@@ -1,11 +1,12 @@
 using ElectronicsComponentWarehouse.Application;
+using ElectronicsComponentWarehouse.Infrastructure.Data;
 using ElectronicsComponentWarehouse.Web.API.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using System.Text;
-using ElectronicsComponentWarehouse.Infrastructure.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Настройка Serilog для логирования
@@ -216,19 +217,22 @@ void ConfigurePipeline(WebApplication app)
     app.MapControllers();
     app.MapHealthChecks("/health");
 
-    // Миграция базы данных при запуске
-    using (var scope = app.Services.CreateScope())
+    // Миграция базы данных при запуске (только в Development)
+    if (app.Environment.IsDevelopment())
     {
-        try
+        using (var scope = app.Services.CreateScope())
         {
-            var serviceProvider = scope.ServiceProvider;
-            serviceProvider.MigrateDatabaseAsync().Wait();
-            Log.Information("Database migration completed successfully");
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "An error occurred while migrating the database");
-            throw;
+            try
+            {
+                var serviceProvider = scope.ServiceProvider;
+                serviceProvider.MigrateDatabaseAsync().Wait();
+                Log.Information("Database migration completed successfully");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "An error occurred while migrating the database");
+                throw;
+            }
         }
     }
 }

@@ -1,7 +1,7 @@
 //Создаем репозиторий для Component
 using ElectronicsComponentWarehouse.Domain.Entities;
 using ElectronicsComponentWarehouse.Domain.Interfaces.Repositories;
-using ElectronicsComponentWarehouse.Infrastructure.Data.Data;
+using ElectronicsComponentWarehouse.Infrastructure.Data.ElectronicsComponentWarehouse.Infrastructure.Data.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Linq.Expressions;
