@@ -1,0 +1,195 @@
+{
+  "info": {
+    "name": "Electronics Component Warehouse API",
+    "description": "Postman коллекция для тестирования API склада электронных компонентов",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Аутентификация",
+      "item": [
+        {
+          "name": "Регистрация администратора",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"Admin123!\",\n  \"email\": \"admin@warehouse.local\",\n  \"fullName\": \"Администратор Системы\",\n  \"role\": \"Admin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/Auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Auth", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Регистрация пользователя",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"user\",\n  \"password\": \"User123!\",\n  \"email\": \"user@warehouse.local\",\n  \"fullName\": \"Обычный Пользователь\",\n  \"role\": \"User\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/Auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Auth", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Вход администратора",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"Admin123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/Auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Auth", "login"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Категории",
+      "item": [
+        {
+          "name": "Получение всех категорий",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/Categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Categories"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Создание категории",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Новая категория\",\n  \"description\": \"Описание категории\",\n  \"parentCategoryId\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/Categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Categories"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Компоненты",
+      "item": [
+        {
+          "name": "Получение всех компонентов",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/Components",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Components"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Создание компонента",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Новый компонент\",\n  \"description\": \"Описание компонента\",\n  \"stockQuantity\": 100,\n  \"storageCellNumber\": \"B-01-01\",\n  \"manufacturer\": \"Производитель\",\n  \"modelNumber\": \"MODEL-001\",\n  \"datasheetLink\": \"https://example.com/datasheet.pdf\",\n  \"minimumStockLevel\": 10,\n  \"unitPrice\": 5.99,\n  \"categoryId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/Components",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Components"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
