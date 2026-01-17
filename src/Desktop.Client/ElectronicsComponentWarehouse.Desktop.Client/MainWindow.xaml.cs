@@ -1,23 +1,38 @@
-﻿using System.Text;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using ElectronicsComponentWarehouse.Desktop.Client.ViewModels;
+using ElectronicsComponentWarehouse.Desktop.Client.Models.Categories;
 
-namespace ElectronicsComponentWarehouse.Desktop.Client;
-
-/// <summary>
-/// Interaction logic for MainWindow.xaml
-/// </summary>
-public partial class MainWindow : Window
+namespace ElectronicsComponentWarehouse.Desktop.Client
 {
-    public MainWindow()
+    public partial class MainWindow : Window
     {
-        InitializeComponent();
+        private MainViewModel? _viewModel;
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            Loaded += OnWindowLoaded;
+        }
+
+        private void OnWindowLoaded(object sender, RoutedEventArgs e)
+        {
+            _viewModel = DataContext as MainViewModel;
+        }
+
+        private void TreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            if (_viewModel != null && e.NewValue is CategoryModel category)
+            {
+                _viewModel.SelectedCategory = category;
+            }
+        }
+
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            // Сохраняем настройки перед закрытием
+            _viewModel?.SaveSettings();
+            base.OnClosing(e);
+        }
     }
 }
