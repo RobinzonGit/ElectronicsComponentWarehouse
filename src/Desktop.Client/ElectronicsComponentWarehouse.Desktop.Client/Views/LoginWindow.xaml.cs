@@ -1,90 +1,27 @@
-﻿using System;
-using System.Windows;
-using Microsoft.Extensions.DependencyInjection;
-using ElectronicsComponentWarehouse.Desktop.Client.Services.Interfaces;
+﻿using System.Windows;
+using System.Windows.Controls;
+using ElectronicsComponentWarehouse.Desktop.Client.ViewModels;
 
 namespace ElectronicsComponentWarehouse.Desktop.Client.Views
 {
     public partial class LoginWindow : Window
     {
-        private readonly IAuthService _authService;
+        private readonly LoginViewModel _viewModel;
 
-        public LoginWindow(IAuthService authService)
+        public LoginWindow(LoginViewModel viewModel)
         {
             InitializeComponent();
-            _authService = authService;
+            _viewModel = viewModel;
+            DataContext = _viewModel;
 
-            LoginButton.Click += LoginButton_Click;
-            CancelButton.Click += CancelButton_Click;
+            // Привязка PasswordBox к ViewModel
+            PasswordBox.PasswordChanged += (s, e) => _viewModel.Password = PasswordBox.Password;
 
-            // Пытаемся загрузить сохраненную сессию
-            LoadSavedSession();
-        }
-
-        private async void LoadSavedSession()
-        {
-            try
+            // Установка начального пароля, если нужно
+            if (!string.IsNullOrEmpty(_viewModel.Password))
             {
-                if (await _authService.LoadSavedSessionAsync())
-                {
-                    // Если сессия загружена, закрываем окно
-                    DialogResult = true;
-                    Close();
-                }
+                PasswordBox.Password = _viewModel.Password;
             }
-            catch (Exception ex)
-            {
-                ShowError($"Ошибка загрузки сессии: {ex.Message}");
-            }
-        }
-
-        private async void LoginButton_Click(object sender, RoutedEventArgs e)
-        {
-            var username = UsernameTextBox.Text;
-            var password = PasswordBox.Password;
-
-            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
-            {
-                ShowError("Введите имя пользователя и пароль");
-                return;
-            }
-
-            try
-            {
-                var result = await _authService.LoginAsync(username, password);
-
-                if (result != null)
-                {
-                    // Сохраняем сессию, если отмечен чекбокс
-                    if (RememberCheckBox.IsChecked == true)
-                    {
-                        await _authService.SaveSessionAsync();
-                    }
-
-                    DialogResult = true;
-                    Close();
-                }
-                else
-                {
-                    ShowError("Неверное имя пользователя или пароль");
-                }
-            }
-            catch (Exception ex)
-            {
-                ShowError($"Ошибка входа: {ex.Message}");
-            }
-        }
-
-        private void CancelButton_Click(object sender, RoutedEventArgs e)
-        {
-            DialogResult = false;
-            Close();
-        }
-
-        private void ShowError(string message)
-        {
-            ErrorTextBlock.Text = message;
-            ErrorTextBlock.Visibility = Visibility.Visible;
         }
     }
 }

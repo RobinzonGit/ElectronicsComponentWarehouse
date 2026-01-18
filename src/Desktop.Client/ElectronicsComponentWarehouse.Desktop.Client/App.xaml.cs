@@ -1,6 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using CommunityToolkit.Mvvm.Messaging;
+using ElectronicsComponentWarehouse.Desktop.Client.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Windows;
 
@@ -21,18 +22,22 @@ namespace ElectronicsComponentWarehouse.Desktop.Client
 
                 ServiceProvider = _host.Services;
 
-                // Показываем окно логина
-                var loginWindow = ServiceProvider.GetRequiredService<Views.LoginWindow>();
-                if (loginWindow.ShowDialog() == true)
+                // Подписываемся на сообщения об аутентификации
+                WeakReferenceMessenger.Default.Register<AuthenticationSuccessMessage>(this, OnAuthenticationSuccess);
+
+                // Проверяем сохраненную сессию
+                var authService = ServiceProvider.GetRequiredService<Services.Interfaces.IAuthService>();
+                var sessionLoaded = await authService.LoadSavedSessionAsync();
+
+                if (sessionLoaded)
                 {
-                    // Если логин успешен, показываем главное окно
-                    var mainWindow = ServiceProvider.GetRequiredService<MainWindow>();
-                    mainWindow.Show();
+                    // Если сессия загружена, показываем главное окно
+                    ShowMainWindow();
                 }
                 else
                 {
-                    // Если отменен логин, закрываем приложение
-                    Shutdown();
+                    // Иначе показываем окно входа
+                    ShowLoginWindow();
                 }
             }
             catch (Exception ex)
@@ -47,8 +52,53 @@ namespace ElectronicsComponentWarehouse.Desktop.Client
             }
         }
 
+        private void ShowLoginWindow()
+        {
+            var loginWindow = ServiceProvider?.GetRequiredService<Views.LoginWindow>();
+            if (loginWindow != null)
+            {
+                loginWindow.Show();
+            }
+        }
+
+        private void ShowMainWindow()
+        {
+            var mainWindow = ServiceProvider?.GetRequiredService<MainWindow>();
+            if (mainWindow != null)
+            {
+                mainWindow.Show();
+            }
+        }
+
+        private void OnAuthenticationSuccess(object recipient, AuthenticationSuccessMessage message)
+        {
+            if (message.IsAuthenticated)
+            {
+                // Закрываем окно входа
+                foreach (Window window in Windows)
+                {
+                    if (window is Views.LoginWindow)
+                    {
+                        window.Close();
+                        break;
+                    }
+                }
+
+                // Показываем главное окно
+                ShowMainWindow();
+            }
+            else
+            {
+                // Если аутентификация не удалась, закрываем приложение
+                Shutdown();
+            }
+        }
+
         private async void OnExit(object sender, ExitEventArgs e)
         {
+            // Отписываемся от сообщений
+            WeakReferenceMessenger.Default.Unregister<AuthenticationSuccessMessage>(this);
+
             if (_host != null)
             {
                 using (_host)

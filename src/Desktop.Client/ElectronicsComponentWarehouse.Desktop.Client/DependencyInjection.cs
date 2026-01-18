@@ -1,6 +1,10 @@
+// Обновленный DependencyInjection.cs
+using ElectronicsComponentWarehouse.Desktop.Client.Services;
 using ElectronicsComponentWarehouse.Desktop.Client.Services.Implementations;
 using ElectronicsComponentWarehouse.Desktop.Client.Services.Interfaces;
 using ElectronicsComponentWarehouse.Desktop.Client.ViewModels;
+using ElectronicsComponentWarehouse.Desktop.Client.ViewModels.Categories;
+using ElectronicsComponentWarehouse.Desktop.Client.ViewModels.Components;
 using ElectronicsComponentWarehouse.Desktop.Client.Views;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -61,11 +65,16 @@ namespace ElectronicsComponentWarehouse.Desktop.Client
                     int.Parse(configuration["ApiSettings:TimeoutSeconds"] ?? "30"));
             });
 
-            // Сервисы приложения
+            // Базовые сервисы
             services.AddSingleton<ILocalStorageService, JsonFileStorageService>();
             services.AddSingleton<IAuthService, AuthService>();
             services.AddSingleton<IComponentService, ComponentService>();
             services.AddSingleton<ICategoryService, CategoryService>();
+
+            // Новые сервисы
+            services.AddSingleton<CurrentUserService>();
+            services.AddSingleton<IDialogService, DialogService>();
+            services.AddSingleton<INavigationService, NavigationService>();
 
             // Конфигурация
             services.AddSingleton(configuration);
@@ -79,14 +88,23 @@ namespace ElectronicsComponentWarehouse.Desktop.Client
 
         private static void ConfigureViewModels(IServiceCollection services)
         {
+            // ViewModels
             services.AddSingleton<MainViewModel>();
+            services.AddSingleton<LoginViewModel>();
+            services.AddSingleton<ComponentListViewModel>();
+            services.AddSingleton<CategoryTreeViewModel>();
+            services.AddTransient<ComponentEditViewModel>();
         }
 
         private static void ConfigureViews(IServiceCollection services)
         {
-            // Главное окно
+            // Окна
             services.AddSingleton<MainWindow>();
-            services.AddTransient<Views.LoginWindow>();
+            services.AddTransient<LoginWindow>();
+
+            // TODO: Добавить диалоговые окна
+            // services.AddTransient<ComponentEditWindow>();
+            // services.AddTransient<CategoryEditWindow>();
         }
     }
 }

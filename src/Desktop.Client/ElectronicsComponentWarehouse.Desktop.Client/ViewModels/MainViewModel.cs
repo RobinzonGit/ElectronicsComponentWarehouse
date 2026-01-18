@@ -1,21 +1,27 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using ElectronicsComponentWarehouse.Desktop.Client.Models.Auth;
 using ElectronicsComponentWarehouse.Desktop.Client.Models.Categories;
-using ElectronicsComponentWarehouse.Desktop.Client.Models.Components;
+using ElectronicsComponentWarehouse.Desktop.Client.Services;
 using ElectronicsComponentWarehouse.Desktop.Client.Services.Interfaces;
+using ElectronicsComponentWarehouse.Desktop.Client.ViewModels.Categories;
+using ElectronicsComponentWarehouse.Desktop.Client.ViewModels.Components;
 using System;
-using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows;
 
 namespace ElectronicsComponentWarehouse.Desktop.Client.ViewModels
 {
+    /// <summary>
+    /// Главная ViewModel приложения
+    /// </summary>
     public partial class MainViewModel : ObservableObject
     {
+        private readonly CurrentUserService _currentUserService;
+        private readonly IDialogService _dialogService;
+        private readonly INavigationService _navigationService;
         private readonly IAuthService _authService;
-        private readonly IComponentService _componentService;
-        private readonly ICategoryService _categoryService;
 
         [ObservableProperty]
         private string _windowTitle = "Electronics Component Warehouse";
@@ -24,16 +30,7 @@ namespace ElectronicsComponentWarehouse.Desktop.Client.ViewModels
         private UserInfoModel? _currentUser;
 
         [ObservableProperty]
-        private ObservableCollection<CategoryModel> _categories = new();
-
-        [ObservableProperty]
-        private ObservableCollection<ComponentModel> _components = new();
-
-        [ObservableProperty]
-        private CategoryModel? _selectedCategory;
-
-        [ObservableProperty]
-        private ComponentModel? _selectedComponent;
+        private ObservableObject? _currentContent;
 
         [ObservableProperty]
         private string _statusMessage = "Готово";
@@ -45,284 +42,202 @@ namespace ElectronicsComponentWarehouse.Desktop.Client.ViewModels
         private int _progressValue;
 
         [ObservableProperty]
-        private bool _isIndeterminate;
-
-        [ObservableProperty]
         private string _appVersion = "1.0.0";
 
         [ObservableProperty]
-        private string _searchText = string.Empty;
+        private bool _isMenuOpen;
 
-        [ObservableProperty]
-        private string _selectedCategoryPath = "Все категории";
-
-        // Команды
-        public IAsyncRelayCommand ShowComponentsCommand { get; }
-        public IRelayCommand ShowCategoriesCommand { get; }
-        public IRelayCommand ShowReportsCommand { get; }
-        public IRelayCommand LogoutCommand { get; }
-        public IAsyncRelayCommand RefreshCategoriesCommand { get; }
-        public IAsyncRelayCommand RefreshComponentsCommand { get; }
-        public IAsyncRelayCommand SearchCommand { get; }
-        public IRelayCommand AddCategoryCommand { get; }
-        public IRelayCommand AddComponentCommand { get; }
-        public IRelayCommand EditComponentCommand { get; }
-        public IRelayCommand DeleteComponentCommand { get; }
-        public IRelayCommand OpenDatasheetCommand { get; }
-        public IRelayCommand QuickEditComponentCommand { get; }
+        public ComponentListViewModel ComponentListViewModel { get; }
+        public CategoryTreeViewModel CategoryTreeViewModel { get; }
+        public CategoryModel SelectedCategory { get; internal set; }
 
         public MainViewModel(
-            IAuthService authService,
-            IComponentService componentService,
-            ICategoryService categoryService)
+            CurrentUserService currentUserService,
+            ComponentListViewModel componentListViewModel,
+            CategoryTreeViewModel categoryTreeViewModel,
+            IDialogService dialogService,
+            INavigationService navigationService,
+            IAuthService authService)
         {
+            _currentUserService = currentUserService;
+            _dialogService = dialogService;
+            _navigationService = navigationService;
             _authService = authService;
-            _componentService = componentService;
-            _categoryService = categoryService;
 
-            // Инициализация команд
-            ShowComponentsCommand = new AsyncRelayCommand(ShowComponentsAsync);
-            ShowCategoriesCommand = new RelayCommand(ShowCategories);
-            ShowReportsCommand = new RelayCommand(ShowReports);
-            LogoutCommand = new RelayCommand(Logout);
-            RefreshCategoriesCommand = new AsyncRelayCommand(RefreshCategoriesAsync);
-            RefreshComponentsCommand = new AsyncRelayCommand(RefreshComponentsAsync);
-            SearchCommand = new AsyncRelayCommand(SearchComponentsAsync);
-            AddCategoryCommand = new RelayCommand(AddCategory);
-            AddComponentCommand = new RelayCommand(AddComponent);
-            EditComponentCommand = new RelayCommand(EditComponent);
-            DeleteComponentCommand = new RelayCommand(DeleteComponent);
-            OpenDatasheetCommand = new RelayCommand<string>(OpenDatasheet);
-            QuickEditComponentCommand = new RelayCommand<ComponentModel>(QuickEditComponent);
+            ComponentListViewModel = componentListViewModel;
+            CategoryTreeViewModel = categoryTreeViewModel;
 
-            // Загрузка данных при старте
-            LoadInitialData();
+            // Устанавливаем начальный контент
+            CurrentContent = ComponentListViewModel;
+
+            // Подписываемся на события
+            _currentUserService.UserChanged += OnUserChanged;
+            WeakReferenceMessenger.Default.Register<AuthenticationSuccessMessage>(this, OnAuthenticationSuccess);
+            WeakReferenceMessenger.Default.Register<ComponentSavedMessage>(this, OnComponentSaved);
+            WeakReferenceMessenger.Default.Register<CloseWindowMessage>(this, OnCloseWindow);
+
+            // Инициализация текущего пользователя
+            CurrentUser = _currentUserService.CurrentUser;
         }
 
-        private async Task ShowComponentsAsync()
+        /// <summary>
+        /// Команда показа списка компонентов
+        /// </summary>
+        [RelayCommand]
+        private void ShowComponents()
         {
-            await RefreshComponentsAsync();
+            CurrentContent = ComponentListViewModel;
+            StatusMessage = "Просмотр компонентов";
+            IsMenuOpen = false;
         }
 
+        /// <summary>
+        /// Команда показа дерева категорий
+        /// </summary>
+        [RelayCommand]
         private void ShowCategories()
         {
+            CurrentContent = CategoryTreeViewModel;
             StatusMessage = "Просмотр категорий";
+            IsMenuOpen = false;
         }
 
-        private void ShowReports()
+        /// <summary>
+        /// Команда показа отчетов
+        /// </summary>
+        [RelayCommand]
+        private async Task ShowReportsAsync()
         {
+            await _dialogService.ShowMessageAsync("Отчеты",
+                "Функция отчетов будет реализована в следующей версии");
             StatusMessage = "Просмотр отчетов";
+            IsMenuOpen = false;
         }
 
-        private void Logout()
+        /// <summary>
+        /// Команда выхода из системы
+        /// </summary>
+        [RelayCommand]
+        private async Task LogoutAsync()
         {
-            _ = _authService.LogoutAsync();
-            Application.Current.Shutdown();
+            var confirm = await _dialogService.ShowConfirmationAsync(
+                "Подтверждение выхода",
+                "Вы уверены, что хотите выйти из системы?");
+
+            if (confirm)
+            {
+                await _authService.LogoutAsync();  // Используем IAuthService напрямую
+                Application.Current.Shutdown();
+            }
         }
 
-        private async Task RefreshCategoriesAsync()
+        /// <summary>
+        /// Команда переключения меню
+        /// </summary>
+        [RelayCommand]
+        private void ToggleMenu()
         {
-            try
-            {
-                IsBusy = true;
-                StatusMessage = "Загрузка категорий...";
-
-                var categories = await _categoryService.GetCategoryHierarchyAsync();
-                Categories.Clear();
-
-                foreach (var category in categories)
-                {
-                    Categories.Add(category);
-                }
-
-                StatusMessage = $"Загружено {Categories.Count} категорий";
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Ошибка загрузки категорий: {ex.Message}";
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+            IsMenuOpen = !IsMenuOpen;
         }
 
-        private async Task RefreshComponentsAsync()
+        /// <summary>
+        /// Команда обновления данных
+        /// </summary>
+        [RelayCommand]
+        private async Task RefreshDataAsync()
         {
-            try
+            if (CurrentContent is ComponentListViewModel componentList)
             {
-                IsBusy = true;
-                StatusMessage = "Загрузка компонентов...";
-
-                var components = await _componentService.GetAllComponentsAsync();
-                Components.Clear();
-
-                foreach (var component in components)
-                {
-                    Components.Add(component);
-                }
-
-                StatusMessage = $"Загружено {Components.Count} компонентов";
+                await componentList.RefreshAsync();  // Теперь это public метод
+                StatusMessage = "Данные компонентов обновлены";
             }
-            catch (Exception ex)
+            else if (CurrentContent is CategoryTreeViewModel categoryTree)
             {
-                StatusMessage = $"Ошибка загрузки компонентов: {ex.Message}";
-            }
-            finally
-            {
-                IsBusy = false;
+                await categoryTree.RefreshAsync();  // Теперь это public метод
+                StatusMessage = "Данные категорий обновлены";
             }
         }
 
-        private async Task SearchComponentsAsync()
+        /// <summary>
+        /// Команда открытия настроек
+        /// </summary>
+        [RelayCommand]
+        private async Task OpenSettingsAsync()
         {
-            if (string.IsNullOrWhiteSpace(SearchText))
-            {
-                await RefreshComponentsAsync();
-                return;
-            }
-
-            try
-            {
-                IsBusy = true;
-                StatusMessage = "Поиск компонентов...";
-
-                var components = await _componentService.SearchComponentsAsync(SearchText);
-                Components.Clear();
-
-                foreach (var component in components)
-                {
-                    Components.Add(component);
-                }
-
-                StatusMessage = $"Найдено {Components.Count} компонентов";
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Ошибка поиска: {ex.Message}";
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+            await _dialogService.ShowMessageAsync("Настройки",
+                "Функция настроек будет реализована в следующей версии");
+            StatusMessage = "Настройки";
         }
 
-        private void AddCategory()
+        /// <summary>
+        /// Команда показа информации о программе
+        /// </summary>
+        [RelayCommand]
+        private async Task AboutAsync()
         {
-            StatusMessage = "Добавление категории";
-            // TODO: Реализовать диалог добавления категории
+            await _dialogService.ShowMessageAsync("О программе",
+                "Electronics Component Warehouse\n" +
+                "Версия: 1.0.0\n" +
+                "Учебное приложение для демонстрации лучших практик .NET разработки\n\n" +
+                "Функции:\n" +
+                "- Учет электронных компонентов\n" +
+                "- Иерархическая система категорий\n" +
+                "- Разграничение прав доступа\n" +
+                "- REST API с JWT аутентификацией\n" +
+                "- MVVM архитектура с WPF");
+            StatusMessage = "О программе";
         }
 
-        private void AddComponent()
+        /// <summary>
+        /// Обработчик изменения пользователя
+        /// </summary>
+        private void OnUserChanged(object? sender, EventArgs e)
         {
-            StatusMessage = "Добавление компонента";
-            // TODO: Реализовать диалог добавления компонента
+            CurrentUser = _currentUserService.CurrentUser;
+            StatusMessage = CurrentUser != null
+                ? $"Добро пожаловать, {CurrentUser.Username}!"
+                : "Готово";
         }
 
-        private void EditComponent()
+        /// <summary>
+        /// Обработчик успешной аутентификации
+        /// </summary>
+        private void OnAuthenticationSuccess(object recipient, AuthenticationSuccessMessage message)
         {
-            if (SelectedComponent != null)
+            if (message.IsAuthenticated)
             {
-                StatusMessage = $"Редактирование компонента: {SelectedComponent.Name}";
-                // TODO: Реализовать диалог редактирования компонента
+                CurrentUser = _currentUserService.CurrentUser;
+                StatusMessage = $"Добро пожаловать, {CurrentUser?.Username}!";
             }
         }
 
-        private void DeleteComponent()
+        /// <summary>
+        /// Обработчик сохранения компонента
+        /// </summary>
+        private async void OnComponentSaved(object recipient, ComponentSavedMessage message)
         {
-            if (SelectedComponent != null)
-            {
-                StatusMessage = $"Удаление компонента: {SelectedComponent.Name}";
-                // TODO: Реализовать подтверждение и удаление
-            }
+            var action = message.WasEdit ? "обновлен" : "добавлен";
+            StatusMessage = $"Компонент '{message.Component.Name}' {action}";
+
+            // Обновляем список компонентов
+            await ComponentListViewModel.RefreshAsync();  // Теперь это public метод
         }
 
-        private void OpenDatasheet(string? datasheetLink)
+        /// <summary>
+        /// Обработчик закрытия окна
+        /// </summary>
+        private void OnCloseWindow(object recipient, CloseWindowMessage message)
         {
-            if (!string.IsNullOrEmpty(datasheetLink))
-            {
-                try
-                {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                    {
-                        FileName = datasheetLink,
-                        UseShellExecute = true
-                    });
-                    StatusMessage = "Открытие даташита";
-                }
-                catch (Exception ex)
-                {
-                    StatusMessage = $"Ошибка открытия даташита: {ex.Message}";
-                }
-            }
+            // TODO: Реализовать логику закрытия окон
         }
 
-        private void QuickEditComponent(ComponentModel? component)
-        {
-            if (component != null)
-            {
-                StatusMessage = $"Быстрое редактирование: {component.Name}";
-                // TODO: Реализовать быстрое редактирование
-            }
-        }
-
-        private async void LoadInitialData()
-        {
-            // Проверяем авторизацию
-            if (_authService.IsAuthenticated)
-            {
-                CurrentUser = _authService.CurrentUser;
-
-                // Загружаем начальные данные
-                await RefreshCategoriesAsync();
-                await RefreshComponentsAsync();
-            }
-        }
-
+        /// <summary>
+        /// Сохранение настроек приложения
+        /// </summary>
         public void SaveSettings()
         {
-            // Сохранение настроек приложения
+            // TODO: Реализовать сохранение настроек
             StatusMessage = "Настройки сохранены";
-        }
-
-        partial void OnSelectedCategoryChanged(CategoryModel? value)
-        {
-            if (value != null)
-            {
-                SelectedCategoryPath = value.Name;
-                LoadComponentsByCategory(value.Id);
-            }
-            else
-            {
-                SelectedCategoryPath = "Все категории";
-            }
-        }
-
-        private async void LoadComponentsByCategory(int categoryId)
-        {
-            try
-            {
-                IsBusy = true;
-                StatusMessage = $"Загрузка компонентов категории...";
-
-                var components = await _componentService.GetComponentsByCategoryIdAsync(categoryId);
-                Components.Clear();
-
-                foreach (var component in components)
-                {
-                    Components.Add(component);
-                }
-
-                StatusMessage = $"Загружено {Components.Count} компонентов";
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Ошибка загрузки компонентов категории: {ex.Message}";
-            }
-            finally
-            {
-                IsBusy = false;
-            }
         }
     }
 }
