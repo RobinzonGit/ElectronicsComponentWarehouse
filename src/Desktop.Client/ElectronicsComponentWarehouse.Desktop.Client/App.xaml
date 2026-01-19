@@ -1,11 +1,11 @@
 ﻿<Application x:Class="ElectronicsComponentWarehouse.Desktop.Client.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:ElectronicsComponentWarehouse.Desktop.Client"
+             xmlns:local="clr-namespace:ElectronicsComponentWarehouse.Desktop.Client.Common.Converters"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" 
-             xmlns:converters="clr-namespace:ElectronicsComponentWarehouse.Desktop.Client.Common.Converters"
              Startup="OnStartup"
              Exit="OnExit">
+
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -14,20 +14,11 @@
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Defaults.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- Конвертеры -->
-            <converters:RoleToVisibilityConverter x:Key="RoleToVisibilityConverter" />
-            <converters:StockToColorConverter x:Key="StockToColorConverter" />
-            <converters:DateTimeConverter x:Key="DateTimeConverter" />
-            <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
-            <converters:NullToBooleanConverter x:Key="NullToBooleanConverter" />
-            <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
-            <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
-           
-
             <!-- Стили приложения -->
             <Style TargetType="Window">
                 <Setter Property="FontFamily" Value="Segoe UI" />
                 <Setter Property="FontSize" Value="14" />
+                <!-- WindowStartupLocation нельзя задавать через Setter -->
             </Style>
 
             <Style TargetType="Button">
@@ -58,6 +49,11 @@
             <Style TargetType="TreeView">
                 <Setter Property="Margin" Value="8" />
             </Style>
+
+            <local:RoleToVisibilityConverter x:Key="RoleToVisibilityConverter" />
+            <local:StockToColorConverter x:Key="StockToColorConverter" />
+            <local:DateTimeConverter x:Key="DateTimeConverter" />
+            <local:StockStatusToBrushConverter x:Key="StockStatusToBrushConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -1,0 +1,140 @@
+<Window x:Class="ElectronicsComponentWarehouse.Desktop.Client.ComponentEditWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        mc:Ignorable="d"
+        Title="Edit Component" 
+        Height="600" Width="500"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="SingleBorderWindow">
+
+    <Border Background="{DynamicResource MaterialDesignBackground}">
+        <Grid Margin="16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <StackPanel Grid.Row="0" Margin="0,0,0,16">
+                <TextBlock x:Name="TitleText" Text="Edit Component" 
+                         FontSize="20" FontWeight="SemiBold"/>
+                <TextBlock x:Name="SubtitleText" Text="Edit component details"
+                         Foreground="{DynamicResource MaterialDesignBody}"/>
+            </StackPanel>
+
+            <!-- Form -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <!-- Name -->
+                    <StackPanel Margin="0,0,0,16">
+                        <TextBlock Text="Name *" 
+                                 Style="{StaticResource MaterialDesignBody1TextBlock}"/>
+                        <TextBox x:Name="NameTextBox" 
+                                materialDesign:HintAssist.Hint="Component name"
+                                FontSize="14" Padding="8"/>
+                    </StackPanel>
+
+                    <!-- Description -->
+                    <StackPanel Margin="0,0,0,16">
+                        <TextBlock Text="Description" 
+                                 Style="{StaticResource MaterialDesignBody1TextBlock}"/>
+                        <TextBox x:Name="DescriptionTextBox" 
+                                materialDesign:HintAssist.Hint="Component description"
+                                FontSize="14" Padding="8"
+                                AcceptsReturn="True"
+                                TextWrapping="Wrap"
+                                Height="80"
+                                VerticalScrollBarVisibility="Auto"/>
+                    </StackPanel>
+
+                    <!-- Category -->
+                    <StackPanel Margin="0,0,0,16">
+                        <TextBlock Text="Category *" 
+                                 Style="{StaticResource MaterialDesignBody1TextBlock}"/>
+                        <ComboBox x:Name="CategoryComboBox" 
+                                 FontSize="14" Padding="8"/>
+                    </StackPanel>
+
+                    <!-- Stock Quantity -->
+                    <StackPanel Margin="0,0,0,16">
+                        <TextBlock Text="Stock Quantity *" 
+                                 Style="{StaticResource MaterialDesignBody1TextBlock}"/>
+                        <TextBox x:Name="QuantityTextBox" 
+                                materialDesign:HintAssist.Hint="Quantity in stock"
+                                FontSize="14" Padding="8"/>
+                    </StackPanel>
+
+                    <!-- Minimum Stock Level -->
+                    <StackPanel Margin="0,0,0,16">
+                        <TextBlock Text="Minimum Stock Level" 
+                                 Style="{StaticResource MaterialDesignBody1TextBlock}"/>
+                        <TextBox x:Name="MinStockTextBox" 
+                                materialDesign:HintAssist.Hint="Minimum stock level for alerts"
+                                FontSize="14" Padding="8"
+                                Text="10"/>
+                    </StackPanel>
+
+                    <!-- Storage Location -->
+                    <StackPanel Margin="0,0,0,16">
+                        <TextBlock Text="Storage Location *" 
+                                 Style="{StaticResource MaterialDesignBody1TextBlock}"/>
+                        <TextBox x:Name="LocationTextBox" 
+                                materialDesign:HintAssist.Hint="Storage cell number"
+                                FontSize="14" Padding="8"/>
+                    </StackPanel>
+
+                    <!-- Manufacturer -->
+                    <StackPanel Margin="0,0,0,16">
+                        <TextBlock Text="Manufacturer" 
+                                 Style="{StaticResource MaterialDesignBody1TextBlock}"/>
+                        <TextBox x:Name="ManufacturerTextBox" 
+                                materialDesign:HintAssist.Hint="Manufacturer name"
+                                FontSize="14" Padding="8"/>
+                    </StackPanel>
+
+                    <!-- Model Number -->
+                    <StackPanel Margin="0,0,0,16">
+                        <TextBlock Text="Model Number" 
+                                 Style="{StaticResource MaterialDesignBody1TextBlock}"/>
+                        <TextBox x:Name="ModelNumberTextBox" 
+                                materialDesign:HintAssist.Hint="Model/part number"
+                                FontSize="14" Padding="8"/>
+                    </StackPanel>
+
+                    <!-- Unit Price -->
+                    <StackPanel Margin="0,0,0,16">
+                        <TextBlock Text="Unit Price" 
+                                 Style="{StaticResource MaterialDesignBody1TextBlock}"/>
+                        <TextBox x:Name="PriceTextBox" 
+                                materialDesign:HintAssist.Hint="Price per unit"
+                                FontSize="14" Padding="8"/>
+                    </StackPanel>
+
+                    <!-- Datasheet Link -->
+                    <StackPanel Margin="0,0,0,16">
+                        <TextBlock Text="Datasheet Link" 
+                                 Style="{StaticResource MaterialDesignBody1TextBlock}"/>
+                        <TextBox x:Name="DatasheetTextBox" 
+                                materialDesign:HintAssist.Hint="URL to datasheet"
+                                FontSize="14" Padding="8"/>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Buttons -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal" 
+                       HorizontalAlignment="Right" Margin="0,16,0,0">
+                <Button x:Name="CancelButton" Content="Cancel" 
+                       Style="{StaticResource MaterialDesignOutlinedButton}"
+                       Margin="0,0,8,0" Click="CancelButton_Click"/>
+                <Button x:Name="SaveButton" Content="Save" 
+                       Style="{StaticResource MaterialDesignRaisedButton}"
+                       Click="SaveButton_Click"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>
